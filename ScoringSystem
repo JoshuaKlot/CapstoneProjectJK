@@ -1,0 +1,23 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+//Spawns a face the shown what grade you have when an action is preformed
+public class Face : MonoBehaviour
+{
+    public float dissapearTimer;
+    public int success;
+    public Animator ani;
+    // Start is called before the first frame update
+    void Start()
+    {
+        //success = this.GetComponentInParent<Player>().success;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+        ani.SetInteger("Success", success);
+
+    }
+}
