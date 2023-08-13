@@ -1,0 +1,55 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerOverWorld : MonoBehaviour
+{
+    public float moveSpeed;
+    public Rigidbody2D rd;
+    private Vector2 moveDirection;
+    private bool facingRight;
+    public Animator ani;
+    // Start is called before the first frame update
+    void Start()
+    {
+        facingRight = false;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        ProcessInputs();
+    }
+
+    void FixedUpdate()
+    {
+        calcMovement();
+
+    }
+
+    void ProcessInputs()
+    {
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveY = Input.GetAxisRaw("Vertical");
+        if (!facingRight && moveX > 0)
+        {
+            facingRight = true;
+            transform.localRotation = Quaternion.Euler(0, 180, 0);
+        }
+
+        if (facingRight && moveX < 0)
+        {
+            facingRight = false;
+            transform.localRotation = Quaternion.Euler(0, 0, 0);
+        }
+      
+        ani.SetInteger("Xvar",Mathf.Abs(((int)moveX)));
+        ani.SetInteger("Yvar", (int)moveY);
+        moveDirection = new Vector2(moveX, moveY).normalized;
+    }
+
+    void calcMovement()
+    {
+        rd.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+    }
+}
