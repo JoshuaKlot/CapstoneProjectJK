@@ -1,1 +1,305 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+//Player gets call when the eneity says the player is attack as well as dogding when the enemy is attacking
+public class Player : MonoBehaviour
+{
+    
+    public GameObject face;
+    public Animator player;
+    public bool attacking;
+    public int mp;
+    public int num;
+    public string button;
+    public bool dodging;
+    public bool jumping=false;
+    private int speed =20;
+    private float jumpheight=4;
+    public bool sel1;
+    public static bool selecting;
+    public static int selection1;
+    public List<int> enemies;
+    public bool endAttack;
+    public bool attPart1;
+    public bool attPart2;
+    public bool attPart3;
+    private GameObject selEnemy;
+    private bool switchready;
+    private float selwaittime;
+    private float spacewait;
+    private float rotateTimer;
+    private float step;
+    private int rotateAngle;
+    public int success;
+    private bool swung;
+    private bool spPressed;
+    // Start is called before the first frame update
+    void Start()
+    {
+        this.transform.GetChild(1).gameObject.SetActive(false);
+        this.transform.GetChild(2).gameObject.SetActive(false);
+        float step = speed * Time.deltaTime;
+        dodging = false;
+        for(int i =1;i<Entity.enemyCount;i++)
+        {
+            enemies.Add(i);
+        }
+        sel1 = false;
+        selecting = false;
+        attPart1 = false;
+        attPart2 = false;
+        attPart3 = false;
+        swung = false;
+        selection1 = 1;
+    }
+    
+    // Update is called once per frame
+    void Update()
+    { step = speed * Time.deltaTime;
+        //If it gets called form the player enter the selection process
+        if(attacking)
+        {
+            if (dodging)
+            {
+                endAttack = true;
+                this.transform.gameObject.GetComponent<Entity>().EndTurn = true;
+            }
+            else
+            {
+                success = 0;
+                selecting = true;
+                spacewait = 0;
+                attacking = false;
+                endAttack = false;
+                this.transform.GetChild(1).gameObject.SetActive(false);
+                this.transform.GetChild(2).gameObject.SetActive(false);
+            }
+        }
+        Debug.Log("This is " + BattleManager.TurnOrder[BattleManager.fighter].name);
+        if(BattleManager.TurnOrder[BattleManager.fighter].name==this.name&&selecting)
+        {
+            sel1 = true;
+        }
+        else
+        {
+            sel1 = false;
+        }
+        //Switches between enemies to attack if there are multiple
+        if (sel1)
+        {
+            
+            Debug.Log("selection1 is " + selection1);
+            Debug.Log("EnemyCount is " + Entity.enemyCount);
+            Debug.Log("switchready is " + switchready);
+            spacewait += Time.deltaTime;
+            if (Input.GetKey("left") && switchready)
+            {
+                selection1++;
+                if (selection1 >= Entity.enemyCount)
+                {
+                    selection1 = 1;
+                }
+                switchready = false;
+                selwaittime = 0;
+            }
+            else if (Input.GetKey("right") && switchready)
+            {
+                selection1--;
+                if (selection1 < 1)
+                {
+                    selection1 = Entity.enemyCount;
+                }
+                switchready = false;
+                selwaittime = 0;
+
+            }
+            if (!switchready)
+            {
+                selwaittime += Time.deltaTime;
+                if (selwaittime > .75f)
+                {
+                    switchready = true;
+                }
+            }
+
+            if(Input.GetKey(button)&&spacewait>.5f)
+            {
+   
+                attPart1 = true;
+                
+            }
+        }
+        //AttPart1 brings the player to the target
+        if(attPart1)
+        {
+            selecting = false;
+            if (this.transform.position.x<Boss.target.transform.position.x-1)
+            {
+                transform.position = Vector2.MoveTowards(transform.position, new Vector2(Boss.target.GetComponent<Entity>().startPos.x-2f, (float)(Boss.target.GetComponent<Entity>().startPos.y-.5f)), step);
+                if (this.transform.position.x>= Boss.target.transform.position.x - 2f)
+                {
+                    attPart1 = false;
+                    attPart2 = true;
+                    player.SetBool("Attacking", true);
+                }
+            }
+        }
+        //AttPart2 has the player prepare an attack
+        if(attPart2)
+        {
+            
+            Debug.Log("You are in attPart2");
+            rotateTimer += Time.deltaTime;
+            if(rotateTimer>=.05f&&rotateAngle<90&&!swung)
+            {
+                rotateTimer = 0;
+                rotateAngle += 5;
+            }
+            this.transform.rotation = Quaternion.Euler(0, 0, rotateAngle);
+            if(Input.GetKey(button)&&!swung)
+            {
+                //The later the assigned button is pressed the better your grade is
+                spPressed = true;
+                if(rotateAngle<30)
+                {
+                    success = 1;
+                }else if(rotateAngle<60)
+                {
+                    success = 2;
+                }
+                else if (rotateAngle < 90)
+                {
+                    success = 3;
+                }
+                else
+                {
+                    success = 4;
+                }
+                
+            }
+            Debug.Log("Space pressed is " + spPressed);
+            Debug.Log("Swung is " + swung);
+            //Spawns in your grade once you have swung
+            if(((rotateAngle>=90&&rotateTimer>=.2f)||spPressed)&&!swung)
+            {
+                if(!spPressed)
+                {
+                    success = 0;
+                }
+                rotateAngle = -90;
+                rotateTimer = 0;
+                swung = true;
+                SpawnFace();
+                
+            }
+            if(rotateTimer>=.5f&&swung)
+            {
+                
+                rotateTimer = 0;
+                this.transform.rotation = Quaternion.Euler(0, 0, 0);
+                swung = false;
+                spPressed = false;
+                rotateAngle = 0;
+                attPart2 = false;
+                attPart3 = true;
+                player.SetBool("Attacking", false);
+            }
+
+        }
+        //Brings the player back to his original position
+        if (attPart3)
+        {
+            transform.rotation = Quaternion.Euler(0, 180, 0);
+            this.transform.GetChild(0).gameObject.SetActive(false);
+            if (this.transform.position.x > this.gameObject.GetComponent<Entity>().startPos.x)
+            {
+                transform.position = Vector2.MoveTowards(transform.position, this.gameObject.GetComponent<Entity>().startPos, step);
+                if (this.transform.position.x <= this.gameObject.GetComponent<Entity>().startPos.x)
+                {
+                    this.transform.GetChild(0).gameObject.SetActive(false);
+                    this.transform.GetChild(1).gameObject.SetActive(false);
+                    this.transform.GetChild(2).gameObject.SetActive(false);
+                    attPart3 = false;
+                    endAttack = true;
+                    this.transform.gameObject.GetComponent<Entity>().EndTurn = true;
+                    transform.rotation = Quaternion.Euler(0, 0, 0);
+
+                }
+            }
+        }
+        //Debug.Log("The following requirements are fullfiled to jump:");
+        //Debug.Log("Enemy moving: " + Entity.enemyMoving);
+        //Debug.Log("Dodging: " + dodging);
+        //Dodging code for when its the enemies turn
+        if (Entity.enemyMoving && Input.GetKeyDown(button)&&!dodging)
+        {
+           dodging = true;
+           
+        }
+        //The player jumps up to a certain hieght and then back down while the enemy is moving
+        if(dodging)
+        {
+            if(!jumping)
+            {
+                player.SetBool("Jumping", true);
+                transform.position = Vector2.MoveTowards(transform.position, new Vector2(this.GetComponent<Entity>().startPos.x,this.GetComponent<Entity>().startPos.y + jumpheight), step);
+                if(transform.position.y>=this.GetComponent<Entity>().startPos.y+jumpheight)
+                {
+                    jumping = true;
+                    jumpheight = 4;
+                }
+            }
+            else
+            {
+                player.SetBool("Jumping", false);
+                transform.position = Vector2.MoveTowards(transform.position, this.GetComponent<Entity>().startPos, step);
+                if (transform.position.y <= this.GetComponent<Entity>().startPos.y)
+                {
+                    player.SetBool("Jumping", false);
+                    jumping = false;
+                    dodging = false;
+                    
+                }
+            }
+        }
+
+
+        
+    }
+    //Spawns a face depending on your success
+    void SpawnFace()
+    {
+        GameObject f = Instantiate(face);
+        f.transform.position = new Vector2(this.transform.position.x, this.transform.position.y + 1);
+        f.GetComponent<Face>().success=success;
+        Destroy(f, .5f);
+    }
+    //Attached to the hitbox on the bottom. If you successful jumped on the monster youll jump higher and a success face will spawn
+    public void JumpDetected()
+    {
+        this.transform.GetChild(1).gameObject.SetActive(false);
+        this.transform.GetChild(2).gameObject.SetActive(false);
+        Vector2 jump = new Vector2(this.transform.position.x, this.transform.position.y + 4);
+        success = 3;
+        SpawnFace();
+        jumping = false;
+        jumpheight = jump.y;
+    }
+
+    //Attached to the players front hitbox. If a monster hits you in the front itll spawn a failure face
+    public void HitDetected()
+    {
+        this.transform.GetChild(1).gameObject.SetActive(false);
+        this.transform.GetChild(2).gameObject.SetActive(false);
+        success = 0;
+        SpawnFace();
+        jumping = true;
+    }
+
+    public void ActivateHitBoxes()
+    {
+        this.transform.GetChild(1).gameObject.SetActive(true);
+        this.transform.GetChild(2).gameObject.SetActive(true);
+    }
+}
 
