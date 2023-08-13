@@ -1,0 +1,261 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+//Entity object is attached to every object in the battle and has them take their turn when its their turn
+public class Entity: MonoBehaviour
+{
+    public Animator ani;
+    public static int enemyCount;
+    public static int playerCount=0;
+    static int En = 0;
+    static int numPlayers;
+    static int numEnemies;
+    public int EntityNum;
+    public int place;
+    /* public int hp;
+     public int att;
+     public int def;
+     public int spd;*/
+    private bool targetSpotted;
+    public bool player;
+    public Vector2 startPos;
+    private Vector2 offset;
+    public int playernum;
+    public int enemyNum;
+    private int selPlayer;
+    private float speed = 20;
+    private GameObject attPlayer;
+    private bool codeEnd=true;
+    private int xpos;
+    private bool attacked;
+    private bool coming;
+    public static bool enemyMoving;
+    private int waittime;
+    private float selwaittime;
+    private bool switchready;
+    public bool EndTurn;
+    public int selection;
+    protected void Awake()
+    {
+        targetSpotted = false;
+        //This starting code adds entity to the turnorder list in Battlemanager, and sets up their player num and enetity num
+        startPos = transform.position;
+        EntityNum = En;
+        En++;
+        BattleManager.TurnOrder.Add(this.gameObject);
+        if (player)
+        {
+            playerCount++;
+            playernum = playerCount;
+            this.transform.GetChild(0).gameObject.SetActive(false);
+
+        }
+        else
+        {
+            enemyCount++;
+            enemyNum = enemyCount;
+        }
+        coming = true;
+        enemyMoving=false;
+    }
+    void Update()
+    {
+        //If the Battle Manager says it their turn the entity constantly takes calls the MyTurn function until it isnt
+        if(BattleManager.TurnOrder[BattleManager.fighter]==this.gameObject)
+        {
+            codeEnd = false;
+            ////Debug.Log("I am " + this.gameObject);
+
+            myTurn();
+        }
+    }
+
+    public void myTurn()
+    {  
+            
+
+           
+            //If the enetity is a player this code will have the player cycle through the attack and item option
+            //if the attack button is press the player code takes it from there if the item block is pressed it just  goes to the next turn
+            if (player)
+            {
+            enemyMoving = false;
+            if(!this.transform.GetComponent<Player>().endAttack)
+            {
+                EndTurn = false;
+            }
+            
+            //Debug.Log("Press space");
+
+            //selection = 1;
+            
+            if(!this.transform.GetComponent<Player>().sel1 && !this.transform.GetComponent<Player>().attPart1 && !this.transform.GetComponent<Player>().attPart2&& !this.transform.GetComponent<Player>().attPart3)
+            {
+                //Press left and right in order to switch between attack and item blocks
+                    this.transform.GetChild(0).gameObject.SetActive(true);
+
+                    if (Input.GetKey("left") && switchready)
+                    {
+                        selection++;
+                        if (selection > 1)
+                        {
+                            selection = 0;
+                        }
+                        //Debug.Log("selection is: " + selection);
+                        switchready = false;
+                        selwaittime = 0;
+                    }
+                    else if (Input.GetKey("right") && switchready)
+                    {
+                        selection--;
+                        if (selection < 0)
+                        {
+                            selection = 1;
+                        }
+                        //Debug.Log("selection is: " + selection);
+                        switchready = false;
+                        selwaittime = 0;
+
+                    }
+                    //So it doesnt constantly switch between the two options when the key is press w/o while loops
+                    if (!switchready)
+                    {
+                        selwaittime += Time.deltaTime;
+                        if (selwaittime > .75f)
+                        {
+                            switchready = true;
+                        }
+                    }
+                    //Debug.Log("selection is: " + selection);
+                    //selects an option
+                    if (Input.GetKey(this.transform.GetComponent<Player>().button))
+                    {
+                        
+                        this.transform.GetChild(0).gameObject.SetActive(false);
+                        if (selection == 0)
+                        {
+                            //goes to player if attacking
+                            this.transform.GetComponent<Player>().attacking = true;
+                            EndTurn = true;
+                            //Debug.Log("ME ATTACK NOW!!!");
+                        }
+                        if (selection == 1)
+                        {
+                        //ends turn if not
+                            EndTurn = true;
+                            this.transform.GetComponent<Player>().endAttack = true;
+                        }
+
+
+                        // //Debug.Log("After " + this.name + "'s turn the endTurn is now " + BattleManager.endTurn);
+                        //   codeEnd = true;
+
+                    }
+                
+            }
+            Debug.Log("The attack is over that is " + this.transform.GetComponent<Player>().endAttack);
+            Debug.Log("The endturn is "+EndTurn);
+            //Turns off everything when the player turn has ended
+            if (this.transform.GetComponent<Player>().endAttack&&EndTurn)
+            {
+                Debug.Log("Setting block active false");
+                this.transform.GetChild(0).gameObject.SetActive(false);
+                this.transform.GetComponent<Player>().endAttack = false;
+                BattleManager.endTurn = true;
+                this.transform.GetComponent<Player>().attPart1 = false;
+
+            }
+
+            Debug.Log("Player turn is finished:" + BattleManager.endTurn);
+            if(BattleManager.endTurn)
+            {
+                this.transform.GetChild(0).gameObject.SetActive(false);
+            }
+
+                codeEnd = true;
+            
+            }
+            else
+            {
+            Debug.Log("Monster Turn");
+            
+            Player.selecting = false;
+            //Selects a target
+            if (!targetSpotted)
+            { selPlayer = Random.Range(1, playerCount + 1);
+               targetSpotted = true;
+                Debug.Log("selPlayer: " + selPlayer);
+                Debug.Log("playerCount: " + playerCount);
+                for (int i = 0; i < BattleManager.TurnOrder.Count; i++)
+                {
+                    if (BattleManager.TurnOrder[i].GetComponent<Entity>().playernum == selPlayer)
+                    {
+                        attPlayer = BattleManager.TurnOrder[i];
+                        attPlayer.GetComponent<Player>().ActivateHitBoxes();
+                    }
+                }
+            }
+
+            
+                /*while(attPlayer.GetComponent<Entity>().playernum !=selPlayer)
+                {
+                
+                if (i > BattleManager.TurnOrder.Count)
+                {
+                    break;
+                }
+                attPlayer = BattleManager.TurnOrder[i];
+                i++;
+
+
+                }*/
+                float step = speed * Time.deltaTime;
+            //Runs toward that target
+                if(transform.position.x> attPlayer.GetComponent<Entity>().startPos.x&&coming==true)
+                {
+                ani.SetBool("Attacking", true);
+                enemyMoving = true;
+                transform.position = Vector2.MoveTowards(transform.position,new Vector2(attPlayer.GetComponent<Entity>().startPos.x, (float)(attPlayer.GetComponent<Entity>().startPos.y +.5)), step);
+                if(transform.position.x<= attPlayer.GetComponent<Entity>().startPos.x)
+                {
+                    coming = false;
+                }
+                }
+                //Runs back
+            if (transform.position.x < startPos.x && coming == false)
+            {
+                this.transform.rotation = Quaternion.Euler(0, 180, 0);
+                //transform.position = new Vector2(transform.position.x + 1, transform.position.y);
+                transform.position = Vector2.MoveTowards(transform.position, startPos, step);
+                if (transform.position.x >= startPos.x)
+                {
+                    coming = true;
+                    enemyMoving = false;
+                    this.transform.rotation = Quaternion.Euler(0, 0, 0);
+                    
+                    BattleManager.endTurn = true;
+
+                }
+            }
+            //Ends the turn
+            if(BattleManager.endTurn)
+            {
+                ani.SetBool("Attacking", false);
+                targetSpotted = false;
+            }
+            /*if (transform.position.x == startPos.x)
+            {
+                attacked = false;
+                enemyMoving = false;
+            }*/
+            //Debug.Log("Emeny moving is "+ enemyMoving);
+           
+               // //Debug.Log("Attacking "+attPlayer.name);
+                ////Debug.Log("After " + this.name + "'s turn the endTurn is now " + BattleManager.endTurn);
+            codeEnd = true;
+        }
+
+       
+    }
+
+}
