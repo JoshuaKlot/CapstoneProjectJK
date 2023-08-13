@@ -1,0 +1,39 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+//Battle mananger sets up the turn order and will switch between them when one is done
+public class BattleManager : MonoBehaviour
+{
+    public static bool endTurn = true;
+    public static int fighter;
+    public static List<GameObject> TurnOrder= new List<GameObject>();
+    // Start is called before the first frame update
+    void Start()
+    {
+        fighter = 0;
+    }
+
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        //Debug.Log("Testing Object " + i);
+        if (endTurn)
+        {//The entity object will turn the endturn function on when they are finished with their turn
+            //Then this code will switch the turn to the next player
+            endTurn = false;
+            Debug.Log("It is now " + TurnOrder[fighter].name + "'s turn");
+            //TurnOrder[fighter].GetComponent<Entity>().myTurn();
+            fighter++;
+            
+            if(fighter >= TurnOrder.Count)
+            {
+                fighter = 0;
+            }
+            Debug.Log("It is now " + TurnOrder[fighter].name + "'s turn");
+        }
+        Debug.Log("It is now " + TurnOrder[fighter].name + "'s turn");
+
+
+    }
+
+}
