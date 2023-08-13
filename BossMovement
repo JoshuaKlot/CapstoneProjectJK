@@ -1,0 +1,21 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+//This code switches the animation state of the block above the players head
+public class Blocks : MonoBehaviour
+{
+
+    public Animator anim;
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        int sel = this.GetComponentInParent<Entity>().selection;
+        anim.SetInteger("Selection", sel);
+    }
+}
